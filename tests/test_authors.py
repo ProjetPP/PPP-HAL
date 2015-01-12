@@ -1,4 +1,5 @@
 from ppp_datamodel import Missing, Triple, Resource, Sentence, List
+from ppp_datamodel import Intersection
 from ppp_datamodel.communication import Request, TraceItem, Response
 from ppp_libmodule.tests import PPPTestCase
 from ppp_hal import app
@@ -31,6 +32,23 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIn(
                 Resource('Deployment of a hierarchical middleware'),
                 r[0].tree.list)
+
+    def testIntersection(self):
+        q = Request('1', 'en', Intersection([
+            Triple(
+                Resource('A Hierarchical Resource Reservation Algorithm'),
+                Resource('author'),
+                Missing()),
+            Triple(
+                Resource('Deployment of a hierarchical middleware'),
+                Resource('author'),
+                Missing())]))
+        q.__class__.from_dict(q.as_dict())
+        r = self.request(q)
+        self.assertEqual(len(r), 1, r)
+        self.assertIn(r[0].tree, (
+                List([Resource('Eddy Caron'), Resource('Frédéric Desprez')]),
+                List([Resource('Frédéric Desprez'), Resource('Eddy Caron')])))
 
     def testRecursive(self):
         q = Request('1', 'en', Triple(

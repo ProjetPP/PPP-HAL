@@ -25,7 +25,7 @@ setup(
     ],
     install_requires=[
         'ppp_datamodel>=0.5',
-        'ppp_libmodule>=0.6',
+        'ppp_libmodule>=0.7.3',
     ],
     packages=[
         'ppp_hal',
