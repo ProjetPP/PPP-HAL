@@ -5,8 +5,9 @@ from ppp_libmodule.tests import PPPTestCase
 from ppp_hal import app
 
 class TestDefinition(PPPTestCase(app)):
-    config_var = 'PPP_HAL'
-    config = ''
+    config_var = 'PPP_HAL_CONFIG'
+    config = '{"apis": ["http://api.archives-ouvertes.fr/search/"]}'
+
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(
             Resource('A Hierarchical Resource Reservation Algorithm'),
