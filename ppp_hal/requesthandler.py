@@ -28,7 +28,6 @@ def _query(query, fields):
 def query(query, fields):
     mc = connect_memcached()
     key = b'ppp-hal-' + hashlib.md5(pickle.dumps((query, fields))).digest()
-    print(repr(key))
     try:
         r = mc[key]
     except KeyError:
