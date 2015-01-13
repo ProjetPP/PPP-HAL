@@ -6,7 +6,7 @@ from ppp_hal import app
 
 class TestDefinition(PPPTestCase(app)):
     config_var = 'PPP_HAL_CONFIG'
-    config = '{"apis": ["http://api.archives-ouvertes.fr/search/"]}'
+    config = '{"apis": ["http://api.archives-ouvertes.fr/search/"], "memcached": ["127.0.0.1"]}'
 
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(

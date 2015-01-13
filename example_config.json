@@ -1,5 +1,8 @@
 {
     "apis": [
         "http://api.archives-ouvertes.fr/search/"
+    ],
+    "memcached": [
+        "127.0.0.1"
     ]
 }

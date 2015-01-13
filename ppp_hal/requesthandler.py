@@ -1,5 +1,8 @@
 """Request handler of the module."""
 
+import pickle
+import pylibmc
+import hashlib
 import requests
 import functools
 import itertools
@@ -11,13 +14,27 @@ from ppp_libmodule.simplification import simplify
 
 from .config import Config
 
-@functools.lru_cache(maxsize=128)
-def query(query, fields):
+def connect_memcached():
+    mc = pylibmc.Client(Config().memcached, binary=True)
+    return mc
+
+def _query(query, fields):
     params = {'q': query, 'wt': 'json', 'fl': fields}
     streams = (requests.get(url, params=params, stream=True)
                for url in Config().apis)
     docs_lists = (s.json()['response']['docs'] for s in streams)
     return list(itertools.chain.from_iterable(docs_lists))
+
+def query(query, fields):
+    mc = connect_memcached()
+    key = b'ppp-hal-' + hashlib.md5(pickle.dumps((query, fields))).digest()
+    print(repr(key))
+    try:
+        r = mc[key]
+    except KeyError:
+        r = _query(query, fields)
+        mc[key] = r
+    return r
 
 def replace_author(triple):
     if not isinstance(triple.subject, Resource):
