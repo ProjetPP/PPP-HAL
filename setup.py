@@ -24,7 +24,7 @@ setup(
         'Topic :: Software Development :: Libraries',
     ],
     install_requires=[
-        'pylibmc',
+        'python3-memcached',
         'ppp_datamodel>=0.5',
         'ppp_libmodule>=0.7.3',
     ],
