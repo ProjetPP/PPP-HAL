@@ -9,12 +9,15 @@ from ppp_datamodel import Response, TraceItem
 from ppp_libmodule.exceptions import ClientError
 from ppp_libmodule.simplification import simplify
 
+from .config import Config
+
 @functools.lru_cache(maxsize=128)
 def query(query, fields):
     params = {'q': query, 'wt': 'json', 'fl': fields}
-    d = requests.get('http://api.archives-ouvertes.fr/search/',
-                     params=params).json()
-    return d['response']['docs']
+    streams = (requests.get(url, params=params, stream=True)
+               for url in Config().apis)
+    docs_lists = (s.json()['response']['docs'] for s in streams)
+    return list(itertools.chain.from_iterable(docs_lists))
 
 def replace_author(triple):
     if not isinstance(triple.subject, Resource):
