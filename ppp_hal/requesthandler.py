@@ -13,7 +13,7 @@ import requests
 import functools
 import itertools
 
-from ppp_datamodel import Triple, Resource, Missing, List
+from ppp_datamodel import Triple, Resource, Missing, List, JsonldResource
 from ppp_datamodel import Response, TraceItem
 from ppp_libmodule.exceptions import ClientError
 from ppp_libmodule.simplification import simplify
@@ -40,15 +40,42 @@ def query(query, fields):
         mc.set(key, r, time=Config().memcached_timeout)
     return r
 
+def graph_from_paper(paper):
+    d = {
+            'type': 'ScholarlyArticle',
+            '@context': 'http://schema.org/',
+            'description': paper['abstract_s'],
+            'datePublished': paper['releasedDate_s'],
+            'dateModified': paper['modifiedDateY_i'],
+            '@id': paper['uri_s'],
+            'isSameAs': paper['halId_s'],
+            'url': paper['uri_s'],
+            'name': paper['title_s'],
+            }
+    return d
+
+def author_resource_from_paper(paper):
+    paper_graph = graph_from_paper(paper)
+    return [JsonldResource(author,
+            graph={
+                '@context': 'http://schema.org/',
+                '@id': author, # TODO: Use an actual ID
+                '@reverse': {
+                    'author': paper_graph
+                    },
+                })
+            for author in paper['authFullName_s']]
+
+
 def replace_author(triple):
     if not isinstance(triple.subject, Resource):
         # Can't handle subtrees that are not a paper name
         return triple
     paper_title = triple.subject.value
     papers = query('title_s:"%s"~3' % paper_title,
-            'authFullName_s,title_s')
-    authors = itertools.chain(*(x['authFullName_s'] for x in papers))
-    return List([Resource(x) for x in authors])
+            '*')
+    return List(list(itertools.chain.from_iterable(
+            map(author_resource_from_paper,  papers))))
 
 def replace_paper(triple):
     if not isinstance(triple.object, Resource):

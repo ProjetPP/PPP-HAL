@@ -1,7 +1,7 @@
 import unittest
 
 from ppp_datamodel import Missing, Triple, Resource, Sentence, List
-from ppp_datamodel import Intersection
+from ppp_datamodel import Intersection, JsonldResource
 from ppp_datamodel.communication import Request, TraceItem, Response
 from ppp_libmodule.tests import PPPTestCase
 from ppp_hal import app
@@ -19,11 +19,13 @@ class TestDefinition(PPPTestCase(app)):
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertEqual(set(r[0].tree.list), {
-            Resource('Eddy Caron'),
-            Resource('Frédéric Desprez'),
-            Resource('F. Petit'),
-            Resource('V. Villain')})
+        self.assertEqual({x.value for x in r[0].tree.list}, {
+            'Eddy Caron',
+            'Frédéric Desprez',
+            'F. Petit',
+            'V. Villain'})
+        self.assertIn(JsonldResource('Eddy Caron', graph={'@id': 'Eddy Caron'}),
+                r[0].tree.list)
 
     def testSearchPapers(self):
         q = Request('1', 'en', Triple(
@@ -50,9 +52,8 @@ class TestDefinition(PPPTestCase(app)):
         q.__class__.from_dict(q.as_dict())
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
-        self.assertIn(r[0].tree, (
-                List([Resource('Eddy Caron'), Resource('Frédéric Desprez')]),
-                List([Resource('Frédéric Desprez'), Resource('Eddy Caron')])))
+        self.assertEqual({x.value for x in r[0].tree.list},
+                {'Eddy Caron', 'Frédéric Desprez'})
 
     def testRecursive(self):
         q = Request('1', 'en', Triple(
@@ -68,8 +69,8 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIsInstance(r[0].tree.subject, List)
         self.assertEqual(r[0].tree.predicate, Resource('birth date'))
         self.assertIn(
-                Resource('Donald E. Knuth'),
-                r[0].tree.subject.list)
+                'Donald E. Knuth',
+                {x.value for x in r[0].tree.subject.list})
 
     def testNotTooLarge(self):
         q = Request('1', 'en', Triple(
