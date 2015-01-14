@@ -1,3 +1,5 @@
+import unittest
+
 from ppp_datamodel import Missing, Triple, Resource, Sentence, List
 from ppp_datamodel import Intersection
 from ppp_datamodel.communication import Request, TraceItem, Response
@@ -11,7 +13,7 @@ class TestDefinition(PPPTestCase(app)):
 
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(
-            Resource('A Hierarchical Resource Reservation Algorithm'),
+            Resource('A Hierarchical Resource Reservation Algorithm for Network Enabled Servers of the french department of research.'),
             Resource('author'),
             Missing()))
         r = self.request(q)
@@ -38,7 +40,7 @@ class TestDefinition(PPPTestCase(app)):
     def testIntersection(self):
         q = Request('1', 'en', Intersection([
             Triple(
-                Resource('A Hierarchical Resource Reservation Algorithm'),
+                Resource('A Hierarchical Resource Reservation Algorithm for Network Enabled Servers of the french department of research.'),
                 Resource('author'),
                 Missing()),
             Triple(
@@ -68,3 +70,20 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIn(
                 Resource('Donald E. Knuth'),
                 r[0].tree.subject.list)
+
+    def testNotTooLarge(self):
+        q = Request('1', 'en', Triple(
+            Resource('Le Petit Prince'),
+            Resource('author'),
+            Missing()))
+        r = self.request(q)
+        self.assertEqual(r, [])
+
+    @unittest.skip # This test would work if HAL was not buggy
+    def testNotTooStrict(self):
+        q = Request('1', 'en', Triple(
+            Resource('Le petit prince et la mathématicienn'),
+            Resource('author'),
+            Missing()))
+        r = self.request(q)
+        self.assertEqual(len(r), 1, r)

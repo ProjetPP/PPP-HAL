@@ -44,7 +44,9 @@ def replace_author(triple):
     if not isinstance(triple.subject, Resource):
         # Can't handle subtrees that are not a paper name
         return triple
-    papers = query(triple.subject.value, 'authFullName_s')
+    paper_title = triple.subject.value
+    papers = query('title_s:"%s"~3' % paper_title,
+            'authFullName_s,title_s')
     authors = itertools.chain(*(x['authFullName_s'] for x in papers))
     return List([Resource(x) for x in authors])
 
@@ -95,7 +97,8 @@ class RequestHandler:
 
     def answer(self):
         tree = fixpoint(self.request.tree)
-        if tree:
+        if tree and \
+                (not isinstance(tree, List) or tree.list):
             trace = self.request.trace + [TraceItem('HAL', tree, {})]
             return [Response(self.request.language, tree, {}, trace)]
         else:
