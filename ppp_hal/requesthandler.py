@@ -21,7 +21,7 @@ from ppp_libmodule.simplification import simplify
 from .config import Config
 
 def connect_memcached():
-    mc = memcache.Client(Config().memcached)
+    mc = memcache.Client(Config().memcached_servers)
     return mc
 
 def _query(query, fields):
@@ -37,7 +37,7 @@ def query(query, fields):
     r = mc.get(key)
     if not r:
         r = _query(query, fields)
-        mc.set(key, r)
+        mc.set(key, r, time=Config().memcached_timeout)
     return r
 
 def replace_author(triple):
