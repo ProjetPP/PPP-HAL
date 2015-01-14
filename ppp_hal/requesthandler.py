@@ -1,5 +1,14 @@
 """Request handler of the module."""
 
+import pickle
+import hashlib
+try:
+    import pylibmc as memcache
+except ImportError:
+    try:
+        import memcache
+    except ImportError:
+        raise ImportError('Neither pylibmc or python3-memcached is installed')
 import requests
 import functools
 import itertools
@@ -11,13 +20,25 @@ from ppp_libmodule.simplification import simplify
 
 from .config import Config
 
-@functools.lru_cache(maxsize=128)
-def query(query, fields):
+def connect_memcached():
+    mc = memcache.Client(Config().memcached_servers)
+    return mc
+
+def _query(query, fields):
     params = {'q': query, 'wt': 'json', 'fl': fields}
     streams = (requests.get(url, params=params, stream=True)
                for url in Config().apis)
     docs_lists = (s.json()['response']['docs'] for s in streams)
     return list(itertools.chain.from_iterable(docs_lists))
+
+def query(query, fields):
+    mc = connect_memcached()
+    key = 'ppp-hal-%s' + hashlib.md5(pickle.dumps((query, fields))).hexdigest()
+    r = mc.get(key)
+    if not r:
+        r = _query(query, fields)
+        mc.set(key, r, time=Config().memcached_timeout)
+    return r
 
 def replace_author(triple):
     if not isinstance(triple.subject, Resource):
