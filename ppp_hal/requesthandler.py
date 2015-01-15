@@ -40,11 +40,14 @@ def query(query, fields):
         mc.set(key, r, time=Config().memcached_timeout)
     return r
 
+PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
+        'uri_s', 'halId_s', 'title_s', 'authFullName_s')
+
 def graph_from_paper(paper):
     d = {
-            'type': 'ScholarlyArticle',
+            '@type': 'ScholarlyArticle',
             '@context': 'http://schema.org/',
-            'description': paper['abstract_s'],
+            'description': paper.get('abstract_s', None),
             'datePublished': paper['releasedDate_s'],
             'dateModified': paper['modifiedDateY_i'],
             '@id': paper['uri_s'],
@@ -52,13 +55,26 @@ def graph_from_paper(paper):
             'url': paper['uri_s'],
             'name': paper['title_s'],
             }
+    d = {x: y for (x, y) in d.items() if y is not None}
     return d
 
-def author_resource_from_paper(paper):
+def paper_resource_from_paper(paper):
+    paper_graph = graph_from_paper(paper)
+    paper_graph['author'] = [
+            {'@type': 'Person',
+             '@context': 'http://schema.org',
+             '@id': author, # TODO: Use an actual ID
+             }
+            for author in paper['authFullName_s']]
+    return JsonldResource(paper['title_s'][0],
+            graph=paper_graph)
+
+def author_resources_from_paper(paper):
     paper_graph = graph_from_paper(paper)
     return [JsonldResource(author,
             graph={
                 '@context': 'http://schema.org/',
+                '@type': 'Person',
                 '@id': author, # TODO: Use an actual ID
                 '@reverse': {
                     'author': paper_graph
@@ -73,16 +89,17 @@ def replace_author(triple):
         return triple
     paper_title = triple.subject.value
     papers = query('title_s:"%s"~3' % paper_title,
-            '*')
+            PAPER_FIELDS)
     return List(list(itertools.chain.from_iterable(
-            map(author_resource_from_paper,  papers))))
+            map(author_resources_from_paper,  papers))))
 
 def replace_paper(triple):
     if not isinstance(triple.object, Resource):
         # Can't handle subtrees that are not a paper name
         return triple
-    papers = query('authFullName_s:"%s"' % triple.object.value, 'title_s')
-    return List([Resource(x['title_s'][0]) for x in papers])
+    papers = query('authFullName_s:"%s"' % triple.object.value,
+            PAPER_FIELDS)
+    return List(list(map(paper_resource_from_paper,  papers)))
 
 def replace(triple):
     if triple.subject == Missing() and triple.object == Missing():

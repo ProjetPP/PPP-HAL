@@ -35,9 +35,8 @@ class TestDefinition(PPPTestCase(app)):
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertIn(
-                Resource('Deployment of a hierarchical middleware'),
-                r[0].tree.list)
+        self.assertIn('Deployment of a hierarchical middleware',
+                {x.value for x in r[0].tree.list})
 
     def testIntersection(self):
         q = Request('1', 'en', Intersection([
