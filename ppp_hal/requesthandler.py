@@ -41,13 +41,23 @@ def query(query, fields):
     return r
 
 PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
-        'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s')
+        'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s',
+        'authFirstName_s', 'authLastName_s')
 
 def graph_from_paper(paper):
     same_as = list(filter(bool, (
         paper['halId_s'],
         paper.get('arxivId_s', None),
         )))
+    authors = [{'@context': 'http://schema.org/',
+                '@type': 'Person',
+                'name': fullname,
+                'givenName': firstname,
+                'familyName': lastname,
+               }
+               for (fullname, firstname, lastname) in
+               zip(paper['authFullName_s'], paper['authFirstName_s'],
+                   paper['authLastName_s'])]
     d = {
             '@type': 'ScholarlyArticle',
             '@context': 'http://schema.org/',
@@ -58,6 +68,7 @@ def graph_from_paper(paper):
             'isSameAs': paper['halId_s'],
             'url': paper['uri_s'],
             'name': paper['title_s'],
+            'author': authors,
             }
     d = {x: y for (x, y) in d.items() if y is not None}
     return d
@@ -75,16 +86,17 @@ def paper_resource_from_paper(paper):
 
 def author_resources_from_paper(paper):
     paper_graph = graph_from_paper(paper)
-    return [JsonldResource(author,
+    authors = paper_graph.pop('author')
+    return [JsonldResource(author['name'],
             graph={
                 '@context': 'http://schema.org/',
                 '@type': 'Person',
-                '@id': author, # TODO: Use an actual ID
+                '@id': author['name'], # TODO: Use an actual ID
                 '@reverse': {
                     'author': paper_graph
                     },
                 })
-            for author in paper['authFullName_s']]
+            for author in authors]
 
 
 def replace_author(triple):
