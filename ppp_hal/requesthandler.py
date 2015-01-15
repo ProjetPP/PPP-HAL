@@ -42,7 +42,8 @@ def query(query, fields):
 
 PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s',
-        'authFirstName_s', 'authLastName_s')
+        'authFirstName_s', 'authLastName_s', 'authOrganism_s',
+        'version_i')
 
 def graph_from_paper(paper):
     same_as = list(filter(bool, (
@@ -68,6 +69,12 @@ def graph_from_paper(paper):
             'isSameAs': paper['halId_s'],
             'url': paper['uri_s'],
             'name': paper['title_s'],
+            'sourceOrganization': [
+                {'@context': 'http://schema.org/',
+                 '@type': 'Organization',
+                 'name': x,
+                } for x in paper.get('authOrganism_s', [])],
+            'version': paper.get('version_i', None),
             'author': authors,
             }
     d = {x: y for (x, y) in d.items() if y is not None}
