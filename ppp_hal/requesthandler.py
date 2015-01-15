@@ -43,13 +43,15 @@ def query(query, fields):
 PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s',
         'authFirstName_s', 'authLastName_s', 'authOrganism_s',
-        'version_i', 'language_s')
+        'labStructName_s', 'version_i', 'language_s')
 
 def graph_from_paper(paper):
     same_as = list(filter(bool, (
         paper['halId_s'],
         paper.get('arxivId_s', None),
         )))
+    organizations = paper.get('authOrganism_s', []) + \
+            paper.get('labStructName_s', [])
     authors = [{'@context': 'http://schema.org/',
                 '@type': 'Person',
                 'name': fullname,
@@ -73,7 +75,7 @@ def graph_from_paper(paper):
                 {'@context': 'http://schema.org/',
                  '@type': 'Organization',
                  'name': x,
-                } for x in paper.get('authOrganism_s', [])],
+                } for x in organizations],
             'version': paper.get('version_i', None),
             'author': authors,
             'inLanguage': paper['language_s'],
