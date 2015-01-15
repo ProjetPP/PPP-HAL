@@ -41,9 +41,13 @@ def query(query, fields):
     return r
 
 PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
-        'uri_s', 'halId_s', 'title_s', 'authFullName_s')
+        'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s')
 
 def graph_from_paper(paper):
+    same_as = list(filter(bool, (
+        paper['halId_s'],
+        paper.get('arxivId_s', None),
+        )))
     d = {
             '@type': 'ScholarlyArticle',
             '@context': 'http://schema.org/',
