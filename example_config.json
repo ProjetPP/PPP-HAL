@@ -1,6 +1,6 @@
 {
     "apis": [
-        "http://api.archives-ouvertes.fr/search/"
+        "http://api.archives-ouvertes.fr/"
     ],
     "memcached": {
         "servers": [

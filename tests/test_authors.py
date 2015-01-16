@@ -1,15 +1,19 @@
 import unittest
 
 from ppp_datamodel import Missing, Triple, Resource, Sentence, List
-from ppp_datamodel import Intersection
+from ppp_datamodel import Intersection, JsonldResource
 from ppp_datamodel.communication import Request, TraceItem, Response
 from ppp_libmodule.tests import PPPTestCase
 from ppp_hal import app
 
+# Spambot-proof
+EC_ID = 'http://graal.ens-lyon.fr/~ecaron'
+FD_ID = 'mai{3}:{0}.{2}@{1}'.format('Frederic', 'inria.fr', 'Desprez', 'lto')
+
 class TestDefinition(PPPTestCase(app)):
     config_var = 'PPP_HAL_CONFIG'
-    config = '''{"apis": ["http://api.archives-ouvertes.fr/search/"],
-                "memcached": {"servers": ["127.0.0.1"], "timeout": 10}}'''
+    config = '''{"apis": ["http://api.archives-ouvertes.fr/"],
+                "memcached": {"servers": ["127.0.0.1"], "timeout": 1000}}'''
 
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(
@@ -19,11 +23,14 @@ class TestDefinition(PPPTestCase(app)):
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertEqual(set(r[0].tree.list), {
-            Resource('Eddy Caron'),
-            Resource('Frédéric Desprez'),
-            Resource('F. Petit'),
-            Resource('V. Villain')})
+        self.assertEqual({x.value for x in r[0].tree.list}, {
+            'Eddy Caron',
+            'Frédéric Desprez',
+            'F. Petit',
+            'V. Villain'})
+        ec = JsonldResource('Eddy Caron',
+                graph={'@id': 'http://graal.ens-lyon.fr/~ecaron'})
+        self.assertIn(ec, r[0].tree.list)
 
     def testSearchPapers(self):
         q = Request('1', 'en', Triple(
@@ -33,9 +40,8 @@ class TestDefinition(PPPTestCase(app)):
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertIn(
-                Resource('Deployment of a hierarchical middleware'),
-                r[0].tree.list)
+        self.assertIn('Deployment of a hierarchical middleware',
+                {x.value for x in r[0].tree.list})
 
     def testIntersection(self):
         q = Request('1', 'en', Intersection([
@@ -50,9 +56,13 @@ class TestDefinition(PPPTestCase(app)):
         q.__class__.from_dict(q.as_dict())
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
-        self.assertIn(r[0].tree, (
-                List([Resource('Eddy Caron'), Resource('Frédéric Desprez')]),
-                List([Resource('Frédéric Desprez'), Resource('Eddy Caron')])))
+        self.assertEqual({x.value for x in r[0].tree.list},
+                {'Eddy Caron', 'Frédéric Desprez'})
+        ec = JsonldResource('EC', graph={'@id': EC_ID})
+        fd = JsonldResource('FD', graph={'@id': FD_ID})
+        self.assertIn(ec, r[0].tree.list)
+        self.assertIn(fd, r[0].tree.list)
+        self.assertIn(r[0].tree.list, ([ec, fd], [fd, ec]))
 
     def testRecursive(self):
         q = Request('1', 'en', Triple(
@@ -68,7 +78,9 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIsInstance(r[0].tree.subject, List)
         self.assertEqual(r[0].tree.predicate, Resource('birth date'))
         self.assertIn(
-                Resource('Donald E. Knuth'),
+                'Donald E. Knuth',
+                {x.value for x in r[0].tree.subject.list})
+        self.assertNotIn(JsonldResource('DK', graph={'@id': 'Donald E. Knuth'}),
                 r[0].tree.subject.list)
 
     def testNotTooLarge(self):
