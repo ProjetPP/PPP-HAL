@@ -46,9 +46,9 @@ PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'labStructName_s', 'version_i', 'language_s')
 
 def graph_from_paper(paper):
-    same_as = list(filter(bool, (
-        paper.get('arxivId_s', None),
-        )))
+    same_as = []
+    if 'arxivId_s' in paper:
+        same_as.append('http://arxiv.org/abs/%s' % paper['arxivId_s'])
     organizations = paper.get('authOrganism_s', []) + \
             paper.get('labStructName_s', [])
     authors = [{'@type': 'Person',
