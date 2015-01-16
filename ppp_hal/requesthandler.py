@@ -72,9 +72,7 @@ def author_graph_from_docid(docid):
          'givenName': author['firstName_s'],
          'familyName': author['lastName_s']}
     if uris:
-        d['@id'] = uris[0]
-    if len(uris) > 1:
-        d['sameAs'] = uris[1:]
+        d['sameAs'] = uris
     return d
 
 
@@ -86,7 +84,7 @@ PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'labStructName_s', 'version_i', 'language_s')
 
 def graph_from_paper(paper):
-    same_as = [paper['uri_s']]
+    same_as = []
     if 'arxivId_s' in paper:
         same_as.append('http://arxiv.org/abs/%s' % paper['arxivId_s'])
     organizations = paper.get('authOrganism_s', []) + \
