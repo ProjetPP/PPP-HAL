@@ -6,10 +6,14 @@ from ppp_datamodel.communication import Request, TraceItem, Response
 from ppp_libmodule.tests import PPPTestCase
 from ppp_hal import app
 
+# Spambot-proof
+EC_ID = 'http://graal.ens-lyon.fr/~ecaron'
+FD_ID = 'mai{3}:{0}.{2}@{1}'.format('Frederic', 'inria.fr', 'Desprez', 'lto')
+
 class TestDefinition(PPPTestCase(app)):
     config_var = 'PPP_HAL_CONFIG'
-    config = '''{"apis": ["http://api.archives-ouvertes.fr/search/"],
-                "memcached": {"servers": ["127.0.0.1"], "timeout": 10}}'''
+    config = '''{"apis": ["http://api.archives-ouvertes.fr/"],
+                "memcached": {"servers": ["127.0.0.1"], "timeout": 1000}}'''
 
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(
@@ -24,8 +28,9 @@ class TestDefinition(PPPTestCase(app)):
             'Frédéric Desprez',
             'F. Petit',
             'V. Villain'})
-        self.assertIn(JsonldResource('Eddy Caron', graph={'@id': 'Eddy Caron'}),
-                r[0].tree.list)
+        ec = JsonldResource('Eddy Caron',
+                graph={'@id': 'http://graal.ens-lyon.fr/~ecaron'})
+        self.assertIn(ec, r[0].tree.list)
 
     def testSearchPapers(self):
         q = Request('1', 'en', Triple(
@@ -53,8 +58,10 @@ class TestDefinition(PPPTestCase(app)):
         self.assertEqual(len(r), 1, r)
         self.assertEqual({x.value for x in r[0].tree.list},
                 {'Eddy Caron', 'Frédéric Desprez'})
-        ec = JsonldResource('EC', graph={'@id': 'Eddy Caron'})
-        fd = JsonldResource('FD', graph={'@id': 'Frédéric Desprez'})
+        ec = JsonldResource('EC', graph={'@id': EC_ID})
+        fd = JsonldResource('FD', graph={'@id': FD_ID})
+        self.assertIn(ec, r[0].tree.list)
+        self.assertIn(fd, r[0].tree.list)
         self.assertIn(r[0].tree.list, ([ec, fd], [fd, ec]))
 
     def testRecursive(self):
@@ -73,7 +80,7 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIn(
                 'Donald E. Knuth',
                 {x.value for x in r[0].tree.subject.list})
-        self.assertIn(JsonldResource('DK', graph={'@id': 'Donald E. Knuth'}),
+        self.assertNotIn(JsonldResource('DK', graph={'@id': 'Donald E. Knuth'}),
                 r[0].tree.subject.list)
 
     def testNotTooLarge(self):

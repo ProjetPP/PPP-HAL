@@ -24,25 +24,65 @@ def connect_memcached():
     mc = memcache.Client(Config().memcached_servers)
     return mc
 
-def _query(query, fields):
-    params = {'q': query, 'wt': 'json', 'fl': fields}
-    streams = (requests.get(url, params=params, stream=True)
+class APIS:
+    PAPERS = 'search'
+    AUTHORS = 'ref/author'
+
+def _query(query, fields, api):
+    params = {'q': query, 'wt': 'json', 'fl': ','.join(fields)}
+    streams = (requests.get('%s/%s/' % (url, api), params=params, stream=True)
                for url in Config().apis)
     docs_lists = (s.json()['response']['docs'] for s in streams)
     return list(itertools.chain.from_iterable(docs_lists))
 
-def query(query, fields):
+def query(query, fields, api=APIS.PAPERS):
     mc = connect_memcached()
-    key = 'ppp-hal-%s' + hashlib.md5(pickle.dumps((query, fields))).hexdigest()
+    key = (query, fields, api)
+    key = 'ppp-hal-%s' + hashlib.md5(pickle.dumps(key)).hexdigest()
     r = mc.get(key)
     if not r:
-        r = _query(query, fields)
+        r = _query(query, fields, api)
         mc.set(key, r, time=Config().memcached_timeout)
     return r
 
+
+AUTHOR_FIELDS = ('url_s', 'email_s',
+        'firstName_s', 'lastName_s', 'fullName_s')
+
+def author_graph_from_docid(docid):
+    authors = query('docid:%s' % docid, AUTHOR_FIELDS, api=APIS.AUTHORS)
+    assert len(authors) == 1, authors
+    author = authors[0]
+    urls = author.get('url_s', [])
+    emails = author.get('email_s', [])
+    if isinstance(urls, str):
+        urls = [urls]
+    # Some researchers put their lab's URL instead of a personal URL.
+    # This heuristic seems to have no false positives (but a few
+    # false negatives)
+    urls = [x for x in urls if author['lastName_s'].lower() in x.lower()]
+
+    if isinstance(emails, str):
+        emails = [emails]
+    emails = ['mailto:%s' % x for x in emails]
+    uris = emails + urls
+    d = {'@context': 'http://schema.org',
+         '@type': 'Person',
+         'name': author['fullName_s'],
+         'givenName': author['firstName_s'],
+         'familyName': author['lastName_s']}
+    if uris:
+        d['@id'] = uris[0]
+    if len(uris) > 1:
+        d['sameAs'] = uris[1:]
+    return d
+
+
+
+
 PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'uri_s', 'halId_s', 'title_s', 'authFullName_s', 'arxivId_s',
-        'authFirstName_s', 'authLastName_s', 'authOrganism_s',
+        'authOrganism_s', 'authId_i',
         'labStructName_s', 'version_i', 'language_s')
 
 def graph_from_paper(paper):
@@ -51,14 +91,9 @@ def graph_from_paper(paper):
         same_as.append('http://arxiv.org/abs/%s' % paper['arxivId_s'])
     organizations = paper.get('authOrganism_s', []) + \
             paper.get('labStructName_s', [])
-    authors = [{'@type': 'Person',
-                'name': fullname,
-                'givenName': firstname,
-                'familyName': lastname,
-               }
-               for (fullname, firstname, lastname) in
-               zip(paper['authFullName_s'], paper['authFirstName_s'],
-                   paper['authLastName_s'])]
+    # TODO: group everything in a single request
+    authors = [author_graph_from_docid(x)
+               for x in paper['authId_i']]
     d = {
             '@type': 'ScholarlyArticle',
             '@context': 'http://schema.org',
@@ -81,28 +116,16 @@ def graph_from_paper(paper):
 
 def paper_resource_from_paper(paper):
     paper_graph = graph_from_paper(paper)
-    paper_graph['author'] = [
-            {'@type': 'Person',
-             '@context': 'http://schema.org',
-             '@id': author, # TODO: Use an actual ID
-             }
-            for author in paper['authFullName_s']]
     return JsonldResource(paper['title_s'][0],
             graph=paper_graph)
 
 def author_resources_from_paper(paper):
     paper_graph = graph_from_paper(paper)
     authors = paper_graph.pop('author')
-    return [JsonldResource(author['name'],
-            graph={
-                '@context': 'http://schema.org',
-                '@type': 'Person',
-                '@id': author['name'], # TODO: Use an actual ID
-                '@reverse': {
-                    'author': paper_graph
-                    },
-                })
-            for author in authors]
+    for author in authors:
+        author['@reverse'] = {'author': paper_graph}
+    return (JsonldResource(author['name'], graph=author)
+            for author in authors)
 
 
 def replace_author(triple):
