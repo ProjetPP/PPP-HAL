@@ -86,7 +86,7 @@ PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
         'labStructName_s', 'version_i', 'language_s')
 
 def graph_from_paper(paper):
-    same_as = []
+    same_as = [paper['uri_s']]
     if 'arxivId_s' in paper:
         same_as.append('http://arxiv.org/abs/%s' % paper['arxivId_s'])
     organizations = paper.get('authOrganism_s', []) + \
@@ -110,6 +110,7 @@ def graph_from_paper(paper):
             'version': paper.get('version_i', None),
             'author': authors,
             'inLanguage': paper['language_s'],
+            'url': paper['uri_s'],
             }
     d = {x: y for (x, y) in d.items() if y is not None}
     return d
