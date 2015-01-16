@@ -47,7 +47,6 @@ PAPER_FIELDS = ('abstract_s', 'releasedDate_s', 'modifiedDateY_i',
 
 def graph_from_paper(paper):
     same_as = list(filter(bool, (
-        paper['halId_s'],
         paper.get('arxivId_s', None),
         )))
     organizations = paper.get('authOrganism_s', []) + \
@@ -67,7 +66,7 @@ def graph_from_paper(paper):
             'datePublished': paper['releasedDate_s'],
             'dateModified': paper['modifiedDateY_i'],
             '@id': paper['uri_s'],
-            'isSameAs': paper['halId_s'],
+            'sameAs': same_as,
             'name': paper['title_s'],
             'sourceOrganization': [
                 {'@type': 'Organization',
