@@ -53,6 +53,9 @@ class TestDefinition(PPPTestCase(app)):
         self.assertEqual(len(r), 1, r)
         self.assertEqual({x.value for x in r[0].tree.list},
                 {'Eddy Caron', 'Frédéric Desprez'})
+        ec = JsonldResource('EC', graph={'@id': 'Eddy Caron'})
+        fd = JsonldResource('FD', graph={'@id': 'Frédéric Desprez'})
+        self.assertIn(r[0].tree.list, ([ec, fd], [fd, ec]))
 
     def testRecursive(self):
         q = Request('1', 'en', Triple(
@@ -70,6 +73,8 @@ class TestDefinition(PPPTestCase(app)):
         self.assertIn(
                 'Donald E. Knuth',
                 {x.value for x in r[0].tree.subject.list})
+        self.assertIn(JsonldResource('DK', graph={'@id': 'Donald E. Knuth'}),
+                r[0].tree.subject.list)
 
     def testNotTooLarge(self):
         q = Request('1', 'en', Triple(
