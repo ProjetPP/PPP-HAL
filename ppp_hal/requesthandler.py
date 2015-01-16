@@ -109,6 +109,18 @@ def graph_from_paper(paper):
             'author': authors,
             'inLanguage': paper['language_s'],
             'url': paper['uri_s'],
+            'potentialAction': {
+                '@type': 'ViewAction',
+                'image': 'https://hal.archives-ouvertes.fr/img/favicon.png',
+                'target': paper['uri_s'],
+                'name': [
+                    {'@language': 'en',
+                     '@value': 'View on HAL'},
+                    {'@language': 'fr',
+                     '@value': 'Voir sur HAL'},
+                    ]
+                }
+
             }
     d = {x: y for (x, y) in d.items() if y is not None}
     return d
