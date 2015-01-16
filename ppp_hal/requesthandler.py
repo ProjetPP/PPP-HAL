@@ -52,8 +52,7 @@ def graph_from_paper(paper):
         )))
     organizations = paper.get('authOrganism_s', []) + \
             paper.get('labStructName_s', [])
-    authors = [{'@context': 'http://schema.org',
-                '@type': 'Person',
+    authors = [{'@type': 'Person',
                 'name': fullname,
                 'givenName': firstname,
                 'familyName': lastname,
@@ -71,8 +70,7 @@ def graph_from_paper(paper):
             'isSameAs': paper['halId_s'],
             'name': paper['title_s'],
             'sourceOrganization': [
-                {'@context': 'http://schema.org',
-                 '@type': 'Organization',
+                {'@type': 'Organization',
                  'name': x,
                 } for x in organizations],
             'version': paper.get('version_i', None),
