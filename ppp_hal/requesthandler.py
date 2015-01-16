@@ -52,7 +52,7 @@ def graph_from_paper(paper):
         )))
     organizations = paper.get('authOrganism_s', []) + \
             paper.get('labStructName_s', [])
-    authors = [{'@context': 'http://schema.org/',
+    authors = [{'@context': 'http://schema.org',
                 '@type': 'Person',
                 'name': fullname,
                 'givenName': firstname,
@@ -63,16 +63,15 @@ def graph_from_paper(paper):
                    paper['authLastName_s'])]
     d = {
             '@type': 'ScholarlyArticle',
-            '@context': 'http://schema.org/',
+            '@context': 'http://schema.org',
             'description': paper.get('abstract_s', None),
             'datePublished': paper['releasedDate_s'],
             'dateModified': paper['modifiedDateY_i'],
             '@id': paper['uri_s'],
             'isSameAs': paper['halId_s'],
-            'url': paper['uri_s'],
             'name': paper['title_s'],
             'sourceOrganization': [
-                {'@context': 'http://schema.org/',
+                {'@context': 'http://schema.org',
                  '@type': 'Organization',
                  'name': x,
                 } for x in organizations],
@@ -99,7 +98,7 @@ def author_resources_from_paper(paper):
     authors = paper_graph.pop('author')
     return [JsonldResource(author['name'],
             graph={
-                '@context': 'http://schema.org/',
+                '@context': 'http://schema.org',
                 '@type': 'Person',
                 '@id': author['name'], # TODO: Use an actual ID
                 '@reverse': {
