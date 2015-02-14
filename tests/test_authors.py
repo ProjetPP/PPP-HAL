@@ -32,6 +32,14 @@ class TestDefinition(PPPTestCase(app)):
                 graph={'@id': 'http://graal.ens-lyon.fr/~ecaron'})
         self.assertIn(ec, r[0].tree.list)
 
+    def testSearchAuthorsMultiplePredicates(self):
+        q = Request('1', 'en', Triple(
+            Resource('A Hierarchical Resource Reservation Algorithm for Network Enabled Servers of the french department of research.'),
+            List([Resource('author'), Resource('foo')]),
+            Missing()))
+        r = self.request(q)
+        self.assertEqual(len(r), 1, r)
+
     def testSearchPapers(self):
         q = Request('1', 'en', Triple(
             Missing(),
@@ -40,7 +48,7 @@ class TestDefinition(PPPTestCase(app)):
         r = self.request(q)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertIn('Deployment of a hierarchical middleware',
+        self.assertIn('Performance Evaluation of Linear Algebra Routines',
                 {x.value for x in r[0].tree.list})
 
     def testIntersection(self):

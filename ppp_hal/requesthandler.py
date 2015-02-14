@@ -20,7 +20,7 @@ except ImportError:
 from ppp_datamodel import Triple, Resource, Missing, List, JsonldResource
 from ppp_datamodel import Response, TraceItem
 from ppp_libmodule.exceptions import ClientError
-from ppp_libmodule.simplification import simplify
+from ppp_libmodule import shortcuts
 
 from .config import Config
 
@@ -213,32 +213,20 @@ def replace(triple):
 def traverser(tree):
     """Tree traversal predicate."""
     if isinstance(tree, Triple) and \
-            tree.predicate in (Resource('author'), Resource('writer')):
+            not tree.predicate_set \
+            .isdisjoint({Resource('author'), Resource('writer')}):
         return replace(tree)
     else:
         return tree
-
-def fixpoint(tree):
-    """Traverses the tree again and again until it is not modified."""
-    old_tree = None
-    tree = simplify(tree)
-    while tree and old_tree != tree:
-        old_tree = tree
-        tree = tree.traverse(traverser)
-        if not tree:
-            return None
-        tree = simplify(tree)
-    return tree
 
 class RequestHandler:
     def __init__(self, request):
         self.request = request
 
     def answer(self):
-        tree = fixpoint(self.request.tree)
+        tree = shortcuts.traverse_until_fixpoint(traverser, self.request.tree)
         if tree and \
                 (not isinstance(tree, List) or tree.list):
-            trace = self.request.trace + [TraceItem('HAL', tree, {})]
-            return [Response(self.request.language, tree, {}, trace)]
+            return [shortcuts.build_answer(self.request, tree, {}, 'HAL')]
         else:
             return []

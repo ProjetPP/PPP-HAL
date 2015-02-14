@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ppp_hal',
-    version='0.2',
+    version='0.2.1',
     description='HAL backend module for the Projet Pensées Profondes',
     url='https://github.com/ProjetPP',
     author='Valentin Lorentz',
@@ -25,7 +25,7 @@ setup(
     ],
     install_requires=[
         'python3-memcached',
-        'ppp_datamodel>=0.5',
+        'ppp_datamodel>=0.6.6',
         'ppp_libmodule>=0.7.3',
     ],
     packages=[
