@@ -216,6 +216,10 @@ def traverser(tree):
             not tree.predicate_set \
             .isdisjoint({Resource('author'), Resource('writer')}):
         return replace(tree)
+    elif isinstance(tree, Triple) and \
+            not tree.inverse_predicate_set \
+            .isdisjoint({Resource('author'), Resource('writer')}):
+        return replace(tree.inverse())
     else:
         return tree
 
