@@ -46,10 +46,17 @@ class TestDefinition(PPPTestCase(app)):
             Resource('author'),
             Resource('Eddy Caron')))
         r = self.request(q)
+        q2 = Request('1', 'en', Triple(
+             Resource('Eddy Caron'),
+             List([]),
+             Missing(),
+             Resource('author')))
+        r2 = self.request(q2)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertIn('Performance Evaluation of Linear Algebra Routines',
+        self.assertIn('A Scalable Approach to Network Enabled Servers',
                 {x.value for x in r[0].tree.list})
+        self.assertEqual(r, r2)
 
     def testIntersection(self):
         q = Request('1', 'en', Intersection([

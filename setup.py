@@ -25,7 +25,7 @@ setup(
     ],
     install_requires=[
         'python3-memcached',
-        'ppp_datamodel>=0.6.6',
+        'ppp_datamodel>=0.6.9',
         'ppp_libmodule>=0.7.3',
     ],
     packages=[

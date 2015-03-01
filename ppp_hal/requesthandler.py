@@ -17,7 +17,7 @@ except ImportError:
     except ImportError:
         raise ImportError('Neither pylibmc or python3-memcached is installed')
 
-from ppp_datamodel import Triple, Resource, Missing, List, JsonldResource
+from ppp_datamodel import Triple, Resource, Missing, List, JsonldResource, Union
 from ppp_datamodel import Response, TraceItem
 from ppp_libmodule.exceptions import ClientError
 from ppp_libmodule import shortcuts
@@ -212,10 +212,17 @@ def replace(triple):
 
 def traverser(tree):
     """Tree traversal predicate."""
+    L = []
     if isinstance(tree, Triple) and \
             not tree.predicate_set \
             .isdisjoint({Resource('author'), Resource('writer')}):
-        return replace(tree)
+        L.append(replace(tree))
+    if isinstance(tree, Triple) and \
+            not tree.inverse_predicate_set \
+            .isdisjoint({Resource('author'), Resource('writer')}):
+        L.append(replace(tree.inverse()))
+    if L:
+        return Union(L)
     else:
         return tree
 
