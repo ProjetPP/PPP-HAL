@@ -232,7 +232,7 @@ class RequestHandler:
 
     def answer(self):
         tree = shortcuts.traverse_until_fixpoint(traverser, self.request.tree)
-        if tree and \
+        if tree and tree != self.request.tree and \
                 (not isinstance(tree, List) or tree.list):
             return [shortcuts.build_answer(self.request, tree, {}, 'HAL')]
         else:

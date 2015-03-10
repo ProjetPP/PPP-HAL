@@ -15,6 +15,14 @@ class TestDefinition(PPPTestCase(app)):
     config = '''{"apis": ["http://api.archives-ouvertes.fr/"],
                 "memcached": {"servers": ["127.0.0.1"], "timeout": 1000}}'''
 
+    def testNoAnswer(self):
+        q = Request('1', 'en', Triple(
+            Resource('foo'),
+            Resource('bar'),
+            Missing()))
+        r = self.request(q)
+        self.assertEqual(r, [])
+
     def testSearchAuthors(self):
         q = Request('1', 'en', Triple(
             Resource('A Hierarchical Resource Reservation Algorithm for Network Enabled Servers of the french department of research.'),
