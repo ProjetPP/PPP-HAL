@@ -62,7 +62,7 @@ class TestDefinition(PPPTestCase(app)):
         r2 = self.request(q2)
         self.assertEqual(len(r), 1, r)
         self.assertIsInstance(r[0].tree, List)
-        self.assertIn('A Scalable Approach to Network Enabled Servers',
+        self.assertIn('Large Scale P2P Discovery Middleware Demonstration',
                 {x.value for x in r[0].tree.list})
         self.assertEqual(r, r2)
 
